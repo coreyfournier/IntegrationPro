@@ -1,8 +1,20 @@
 using IntegrationPro.Infrastructure;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddIntegrationInfrastructure(builder.Configuration);
 
-var host = builder.Build();
-host.Run();
+var app = builder.Build();
+
+app.MapHealthChecks("/healthz/live", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live")
+});
+
+app.MapHealthChecks("/healthz/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.Run();

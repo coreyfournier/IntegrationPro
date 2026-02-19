@@ -31,4 +31,6 @@ COPY --from=build /app/plugins ./plugins
 # Create output directory for extracted data
 RUN mkdir -p /app/output
 
+EXPOSE 8080
+
 ENTRYPOINT ["dotnet", "IntegrationPro.Worker.dll"]

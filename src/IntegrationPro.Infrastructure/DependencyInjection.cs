@@ -2,6 +2,7 @@ using IntegrationPro.Application.Interfaces;
 using IntegrationPro.Application.PluginLoading;
 using IntegrationPro.Application.Services;
 using IntegrationPro.Infrastructure.DataSaving;
+using IntegrationPro.Infrastructure.HealthChecks;
 using IntegrationPro.Infrastructure.Progress;
 using IntegrationPro.Infrastructure.ServiceBus;
 using Microsoft.Extensions.Configuration;
@@ -31,8 +32,20 @@ public static class DependencyInjection
             outputDir,
             sp.GetRequiredService<ILogger<FileSystemDataSaver>>()));
 
-        // Progress reporter
-        services.AddSingleton<IProgressReporter, LoggingProgressReporter>();
+        // Job status store (singleton, shared between decorator and health checks)
+        services.AddSingleton<IJobStatusStore, JobStatusStore>();
+
+        // Progress reporter: LoggingProgressReporter wrapped by HealthTrackingProgressReporter
+        services.AddSingleton<LoggingProgressReporter>();
+        services.AddSingleton<IProgressReporter>(sp =>
+            new HealthTrackingProgressReporter(
+                sp.GetRequiredService<LoggingProgressReporter>(),
+                sp.GetRequiredService<IJobStatusStore>()));
+
+        // Health checks
+        services.AddHealthChecks()
+            .AddCheck<LivenessHealthCheck>("liveness", tags: new[] { "live" })
+            .AddCheck<ReadinessHealthCheck>("readiness", tags: new[] { "ready" });
 
         // Orchestrator
         services.AddSingleton<IntegrationOrchestrator>();
