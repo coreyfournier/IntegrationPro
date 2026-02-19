@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-IntegrationPro.Worker-0dc5f040-4c97-4c4d-aa9a-2fe48e5ca56b</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\IntegrationPro.Application\IntegrationPro.Application.csproj" />
+    <ProjectReference Include="..\IntegrationPro.Infrastructure\IntegrationPro.Infrastructure.csproj" />
+    <ProjectReference Include="..\IntegrationPro.Domain\IntegrationPro.Domain.csproj" />
+    <ProjectReference Include="..\IntegrationPro.PluginBase\IntegrationPro.PluginBase.csproj" />
+  </ItemGroup>
+
+</Project>

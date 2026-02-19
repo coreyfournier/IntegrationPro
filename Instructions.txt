@@ -1,0 +1,21 @@
+Create a plan for a C# containerized azure app job using domain driven design that is event driven from service bus. The message will contain credentials, unique request id, which plugin to load and configuration information.
+
+The application purpose is to pull information, transform it and then save it to a destination (Extract Transform Load). 
+
+The Extract and Transform should be abstracted out using plugins following native plugin architecture that can be found here:  https://learn.microsoft.com/en-us/dotnet/core/tutorials/creating-app-with-plugin-support
+
+The plugin should support:
+Supplying the credentials and configuration from the message
+An initialization phase such as logging in
+Call back methods to report out progress including when it starts, fails or finishes
+Call back methods to save data, but is generic and the method only passes a data stream, not a model.
+
+Explore the api documentation https://api-docs.prismhr.com.
+Look for the ability to extract company information
+Create a plugin that performs the login and extraction
+Create a simplified common data mode to transform the data into
+Wire up methods to report progress as it's downloaded.
+Wire up methods to indicate failures.
+Write up methods to save the data once done.
+
+Create a stubbed out plugin for testing generates mock data.
