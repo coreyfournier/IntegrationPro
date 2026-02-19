@@ -5,6 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
 		CLAUDE.md = CLAUDE.md
 		Instructions.txt = Instructions.txt
 		README.md = README.md
@@ -147,5 +148,8 @@ Global
 		{FB14F8DA-A0E6-48DD-9E00-0F231FED9F7C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{23B1BC0B-5966-4A09-9B60-1C22C4B081BF} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{9E9BDE8D-3C5E-46E2-90A9-78C68DD8A6C8} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {11631D89-BE6F-4D08-B915-FCB4C49F8EA5}
 	EndGlobalSection
 EndGlobal
