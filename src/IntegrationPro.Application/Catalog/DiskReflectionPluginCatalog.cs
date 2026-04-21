@@ -35,7 +35,8 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
                         Version: version,
                         Description: plugin.Description,
                         Config: JsonSchema.FromType(plugin.ConfigType, SchemaSettings()),
-                        Credentials: JsonSchema.FromType(plugin.CredentialsType, SchemaSettings()));
+                        Credentials: JsonSchema.FromType(plugin.CredentialsType, SchemaSettings()),
+                        PluginType: plugin.GetType());
 
                     var versions = _index.GetOrAdd(plugin.Name, _ =>
                         new SortedDictionary<Version, Entry>(Comparer<Version>.Create((a, b) => b.CompareTo(a))));
@@ -91,11 +92,11 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
     /// Returns a fresh instance per call — plugins may hold per-request state on instance fields,
     /// so callers get an isolated instance for their request lifecycle.
     /// </summary>
-    public Task<IIntegrationPlugin> ResolveAsync(string pluginName, string? version, CancellationToken cancellationToken = default)
+    public Task<IIntegrationPlugin> ResolveAsync(string pluginName, string? version, CancellationToken ct = default)
     {
         var entry = version is null ? FindLatest(pluginName) : Find(pluginName, version);
-        var plugin = _loader.LoadPlugin(entry.PluginDirName, entry.Version);
-        return Task.FromResult(plugin);
+        var instance = (IIntegrationPlugin)Activator.CreateInstance(entry.PluginType)!;
+        return Task.FromResult(instance);
     }
 
     private Entry FindLatest(string pluginName)
@@ -130,5 +131,6 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
         string Version,
         string Description,
         JsonSchema Config,
-        JsonSchema Credentials);
+        JsonSchema Credentials,
+        Type PluginType);
 }

@@ -33,6 +33,9 @@ public static class IntegrationEndpoints
             {
                 switch (result)
                 {
+                    // v1: sync API returns JSON only. Plugins that emit CSV or binary must use
+                    // the Service Bus path. Future work: honor a [OutputContentType] attribute on
+                    // the plugin's ConfigType to let plugins declare their sync-mode content type.
                     case SyncResult.Success s:
                         http.Response.StatusCode = StatusCodes.Status200OK;
                         http.Response.ContentType = "application/json";

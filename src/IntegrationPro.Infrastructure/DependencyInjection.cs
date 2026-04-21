@@ -51,7 +51,8 @@ public static class DependencyInjection
 
         services.AddHealthChecks()
             .AddCheck<LivenessHealthCheck>("liveness", tags: new[] { "live" })
-            .AddCheck<ReadinessHealthCheck>("readiness", tags: new[] { "ready" });
+            .AddCheck<ReadinessHealthCheck>("readiness", tags: new[] { "ready" })
+            .AddCheck<PluginCatalogHealthCheck>("plugin_catalog", tags: new[] { "ready" });
 
         services.AddSingleton<IntegrationOrchestrator>();
 

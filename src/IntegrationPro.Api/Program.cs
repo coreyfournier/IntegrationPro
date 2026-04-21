@@ -18,8 +18,14 @@ app.UseDefaultFiles();
 PluginEndpoints.Map(app);
 IntegrationEndpoints.Map(app);
 
-app.MapHealthChecks("/healthz/live");
-app.MapHealthChecks("/healthz/ready");
+app.MapHealthChecks("/healthz/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live")
+});
+app.MapHealthChecks("/healthz/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
 
 app.Run();
 

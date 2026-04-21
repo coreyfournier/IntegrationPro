@@ -51,3 +51,19 @@ public sealed class ReadinessHealthCheck : IHealthCheck
             $"Latest status: {_statusStore.GetLatestStatus()?.Status.ToString() ?? "Unknown"}"));
     }
 }
+
+public sealed class PluginCatalogHealthCheck : IHealthCheck
+{
+    private readonly Application.Catalog.IPluginCatalog _catalog;
+
+    public PluginCatalogHealthCheck(Application.Catalog.IPluginCatalog catalog) => _catalog = catalog;
+
+    public Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        var count = _catalog.ListPlugins().Count;
+        return Task.FromResult(count > 0
+            ? HealthCheckResult.Healthy($"Plugin catalog has {count} plugin(s).")
+            : HealthCheckResult.Unhealthy("Plugin catalog is empty — no plugins loaded."));
+    }
+}

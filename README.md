@@ -100,7 +100,7 @@ The `IntegrationOrchestrator` drives each plugin through three phases:
    dotnet publish plugins/IntegrationPro.Plugin.MySource -c Release -o plugins-output/IntegrationPro.Plugin.MySource
    ```
 
-The `PluginLoader` resolves plugins by convention: `{PluginsDirectory}/{PluginName}/{PluginName}.dll`. The `PluginName` comes from the Service Bus message.
+The `PluginLoader` resolves plugins by convention: `{PluginsDirectory}/{PluginName}/{Version}/{PluginName}.dll`. When the Service Bus `pluginName` matches the directory name, the loader picks the highest semver subdirectory by default. The sync API addresses plugins by their friendly `IIntegrationPlugin.Name` (e.g., `"Mock"`), while the Service Bus path uses the assembly-directory name (e.g., `"IntegrationPro.Plugin.Mock"`).
 
 ## Included Plugins
 
@@ -226,11 +226,11 @@ dotnet build IntegrationPro.sln
 
 ### Publish Plugins
 
-Each plugin must be published to its own subdirectory. The directory name must match the plugin assembly name:
+Each plugin must be published to its own subdirectory. The directory name must match the plugin assembly name; inside that directory, each version gets its own subdirectory (e.g., `1.0.0`):
 
 ```bash
-dotnet publish plugins/IntegrationPro.Plugin.Mock -c Release -o plugins-output/IntegrationPro.Plugin.Mock
-dotnet publish plugins/IntegrationPro.Plugin.PrismHR -c Release -o plugins-output/IntegrationPro.Plugin.PrismHR
+dotnet publish plugins/IntegrationPro.Plugin.Mock -c Release -o plugins-output/IntegrationPro.Plugin.Mock/1.0.0
+dotnet publish plugins/IntegrationPro.Plugin.PrismHR -c Release -o plugins-output/IntegrationPro.Plugin.PrismHR/1.0.0
 ```
 
 ### Run Locally
