@@ -1,3 +1,4 @@
+using IntegrationPro.Application.Catalog;
 using IntegrationPro.Application.Interfaces;
 using IntegrationPro.Application.PluginLoading;
 using IntegrationPro.Application.Services;
@@ -25,6 +26,21 @@ public static class DependencyInjection
         services.AddSingleton(sp => new PluginLoader(
             pluginsDir,
             sp.GetRequiredService<ILogger<PluginLoader>>()));
+
+        // Plugin catalog
+        // TODO: replace with NuGetFeedPluginCatalog (lazy pull from feed) when feed-backed
+        // resolution is ready. Today's disk+reflection impl is fine for the ~dozens-of-plugins scale.
+        // Blocks during DI construction — acceptable today because disk+reflection initialize is
+        // fully synchronous. The future NuGet-feed impl will need an IHostedService / startup filter
+        // to pre-warm the catalog asynchronously.
+        services.AddSingleton<IPluginCatalog>(sp =>
+        {
+            var catalog = new DiskReflectionPluginCatalog(
+                sp.GetRequiredService<PluginLoader>(),
+                sp.GetRequiredService<ILogger<DiskReflectionPluginCatalog>>());
+            catalog.InitializeAsync().GetAwaiter().GetResult();
+            return catalog;
+        });
 
         // Data saver
         var outputDir = configuration.GetValue<string>("DataOutput:Directory") ?? "/app/output";
