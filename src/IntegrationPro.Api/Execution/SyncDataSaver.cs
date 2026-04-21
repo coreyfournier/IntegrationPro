@@ -8,7 +8,7 @@ namespace IntegrationPro.Api.Execution;
 /// outer pipeline can decide between flushing (success) and discarding (error).
 /// Throws on a second emission — sync mode is single-emission only.
 /// </summary>
-public sealed class SyncDataSaver : IDataSaver
+public sealed class SyncDataSaver : IDataSaver, IAsyncDisposable
 {
     // Buffered to allow proper 4xx/5xx error responses on mid-run failures.
     // Optimization: swap for direct pipe-through (plugin stream -> response.Body)
@@ -22,9 +22,13 @@ public sealed class SyncDataSaver : IDataSaver
     public async Task SaveAsync(string requestId, string dataType, Stream data, CancellationToken ct = default)
     {
         if (HasEmitted)
-            throw new InvalidOperationException(
-                "Sync mode allows a single OnDataReady emission. Use the Service Bus path for multi-emission plugins.");
+            throw new MultiEmissionException();
         DataType = dataType;
         await data.CopyToAsync(Buffer, ct);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await Buffer.DisposeAsync();
     }
 }

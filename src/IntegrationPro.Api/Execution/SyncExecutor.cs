@@ -52,16 +52,18 @@ public sealed class SyncExecutor
         var saver = new SyncDataSaver();
         var context = SyncContextBuilder.Build(plugin, message, saver, _progressReporter, _loggerFactory, ct);
 
+        var initialized = false;
         try
         {
             await plugin.InitializeAsync(context);
+            initialized = true;
             await plugin.ExecuteAsync(ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             return SyncResult.Timeout(requestId, request);
         }
-        catch (InvalidOperationException ex) when (ex.Message.StartsWith("Sync mode allows"))
+        catch (MultiEmissionException ex)
         {
             return SyncResult.MultiEmission(requestId, request, ex.Message);
         }
@@ -72,8 +74,11 @@ public sealed class SyncExecutor
         }
         finally
         {
-            try { await plugin.ShutdownAsync(); } catch (Exception ex)
-            { _logger.LogWarning(ex, "Shutdown failed for {RequestId}", requestId); }
+            if (initialized)
+            {
+                try { await plugin.ShutdownAsync(); } catch (Exception ex)
+                { _logger.LogWarning(ex, "Shutdown failed for {RequestId}", requestId); }
+            }
         }
 
         return SyncResult.Ok(requestId, request, plugin.Version, saver);

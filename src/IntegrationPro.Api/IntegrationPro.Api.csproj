@@ -15,4 +15,7 @@
     <ProjectReference Include="..\IntegrationPro.Domain\IntegrationPro.Domain.csproj" />
     <ProjectReference Include="..\IntegrationPro.PluginBase\IntegrationPro.PluginBase.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="IntegrationPro.Api.Tests" />
+  </ItemGroup>
 </Project>
