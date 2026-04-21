@@ -303,3 +303,43 @@ IntegrationPro/
 └── tests/
     └── IntegrationPro.TestHarness/       # Console app for testing plugins directly
 ```
+
+## Synchronous API
+
+`IntegrationPro.Api` is a second deployable in the same solution: an ASP.NET host that runs the same plugin pipeline synchronously over HTTP instead of consuming Service Bus messages. It exposes discovery endpoints so callers can enumerate installed plugins, fetch their versions, and pull the JSON Schemas for credentials and configuration — then POST a request and get the extracted data back in a single round trip. A schema-driven React playground UI is bundled at `/ui/` for interactive testing.
+
+### Run Locally
+
+```bash
+dotnet run --project src/IntegrationPro.Api/IntegrationPro.Api.csproj
+```
+
+The Api listens on port `8081` by default. Swagger lives at `/swagger`, the playground UI at `/ui/`.
+
+### Endpoints
+
+| Method | Route | Purpose |
+|--------|-------|---------|
+| `GET` | `/plugins` | List installed plugins |
+| `GET` | `/plugins/{name}/versions` | List available versions for a plugin |
+| `GET` | `/plugins/{name}/{version}/schema` | Get the JSON Schema for credentials + configuration |
+| `POST` | `/integrations/run` | Execute a plugin synchronously and return the emitted data |
+
+### Docker
+
+The Api has its own Dockerfile at `src/IntegrationPro.Api/Dockerfile`. It is a multi-stage build: Node stage compiles the React playground, the .NET SDK stage publishes the Api (with `SkipUiBuild=true` so MSBuild doesn't re-run npm) and both bundled plugins, and the aspnet runtime stage assembles the final image.
+
+```bash
+docker build -t integrationpro-api -f src/IntegrationPro.Api/Dockerfile .
+```
+
+Run this from the repository root so the multi-stage `COPY` instructions can see `src/`, `plugins/`, and `IntegrationPro.sln`.
+
+### Two Deployables, One Solution
+
+- `IntegrationPro.Worker` (port `8080`) keeps running Service Bus-driven asynchronous ETL.
+- `IntegrationPro.Api` (port `8081`) serves synchronous HTTP execution and the discovery/playground surface.
+
+Both share `IntegrationPro.Application` + `IntegrationPro.Infrastructure`, so plugins, catalog, and orchestration behave identically. They scale independently.
+
+See the design doc at [`docs/plans/2026-04-21-sync-integration-api-design.md`](docs/plans/2026-04-21-sync-integration-api-design.md) for more detail.

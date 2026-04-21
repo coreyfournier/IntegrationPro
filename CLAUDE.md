@@ -14,6 +14,12 @@ dotnet build src/IntegrationPro.Worker/IntegrationPro.Worker.csproj
 # Run the worker locally
 dotnet run --project src/IntegrationPro.Worker/IntegrationPro.Worker.csproj
 
+# Run the synchronous API (Swagger at /swagger, playground at /ui/)
+dotnet run --project src/IntegrationPro.Api/IntegrationPro.Api.csproj
+
+# Build the Api Docker image (runs npm + dotnet publish in multi-stage)
+docker build -t integrationpro-api -f src/IntegrationPro.Api/Dockerfile .
+
 # Publish plugins (each plugin must be published to its own directory)
 dotnet publish plugins/IntegrationPro.Plugin.PrismHR/IntegrationPro.Plugin.PrismHR.csproj -c Release -o ./plugins-output/IntegrationPro.Plugin.PrismHR/1.0.0
 dotnet publish plugins/IntegrationPro.Plugin.Mock/IntegrationPro.Plugin.Mock.csproj       -c Release -o ./plugins-output/IntegrationPro.Plugin.Mock/1.0.0
@@ -41,6 +47,7 @@ Plugins (loaded at runtime) → PluginBase
 - **IntegrationPro.Application** — Plugin loading (`PluginLoader`, `PluginLoadContext` via `AssemblyLoadContext`), orchestration (`IntegrationOrchestrator`), and interfaces (`IDataSaver`, `IProgressReporter`).
 - **IntegrationPro.Infrastructure** — Implementations: `ServiceBusConsumer` (hosted service listening to queue), `FileSystemDataSaver`, `LoggingProgressReporter`, DI registration (`DependencyInjection.AddIntegrationInfrastructure`).
 - **IntegrationPro.Worker** — Entry point. Minimal `Program.cs` that wires up infrastructure DI and starts the host.
+- **IntegrationPro.Api** — ASP.NET host for synchronous HTTP execution, discovery endpoints, Swagger UI, and the React playground UI. Shares `Application` + `Infrastructure` with Worker; scales independently.
 
 ### Plugin System
 
@@ -69,9 +76,15 @@ Plugins are loaded at runtime using .NET's native plugin architecture (`Assembly
 
 The `IntegrationRequestMessage` contains: `RequestId` (unique), `PluginName` (which plugin to load), `Credentials` (username, password, additional fields), `Configuration` (plugin-specific key/value pairs).
 
+### Synchronous API (new in Phase 4-5)
+
+`IntegrationPro.Api` runs the same plugin pipeline synchronously over HTTP. Clients follow a discovery-first pattern: hit `/plugins` to enumerate installed plugins, `/plugins/{name}/versions` to see versions, then `/plugins/{name}/{version}/schema` to retrieve a JSON Schema describing expected credentials and configuration — all before POSTing to `/integrations/run`. Execution enforces a single-emission constraint: a plugin invocation must produce exactly one `OnDataReady` call, which is buffered through `FileBufferingWriteStream` and streamed back as the HTTP response body. The React playground at `/ui/` renders the schema with RJSF, submits, and displays results. See [`docs/plans/2026-04-21-sync-integration-api-design.md`](docs/plans/2026-04-21-sync-integration-api-design.md) for the full design.
+
 ### Configuration
 
 Configuration is in `appsettings.json` on the Worker project. Key sections:
 - `ServiceBus:ConnectionString`, `ServiceBus:QueueName` — Azure Service Bus connection
 - `Plugins:Directory` — Where published plugin DLLs live (default `/app/plugins` in container)
 - `DataOutput:Directory` — Where extracted data is saved (default `/app/output` in container)
+- `Api:MaxRequestSeconds` — Hard ceiling for sync-execution timeouts (seconds). Default 300.
+- `Api:BufferThresholdBytes` — FileBufferingWriteStream threshold — below this, response stays in-memory; above, spills to a temp file. Default 30720.
