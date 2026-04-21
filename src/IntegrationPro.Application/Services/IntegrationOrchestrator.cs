@@ -43,7 +43,7 @@ public sealed class IntegrationOrchestrator
         IIntegrationPlugin plugin;
         try
         {
-            plugin = _pluginLoader.LoadPlugin(message.PluginName);
+            plugin = _pluginLoader.LoadPlugin(message.PluginName, version: null);
         }
         catch (Exception ex)
         {

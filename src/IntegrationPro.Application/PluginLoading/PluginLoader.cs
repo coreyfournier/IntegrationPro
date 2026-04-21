@@ -20,26 +20,68 @@ public sealed class PluginLoader
     }
 
     /// <summary>
-    /// Loads a plugin by name. Looks for {pluginName}/{pluginName}.dll in the plugins directory.
+    /// Loads a plugin by name and optional version. Looks for
+    /// {pluginName}/{version}/{pluginName}.dll in the plugins directory.
+    /// Null version means the highest semver subdir.
     /// </summary>
-    public IIntegrationPlugin LoadPlugin(string pluginName)
+    public IIntegrationPlugin LoadPlugin(string pluginName, string? version = null)
     {
-        var pluginDll = Path.Combine(_pluginsDirectory, pluginName, $"{pluginName}.dll");
+        var pluginDir = Path.Combine(_pluginsDirectory, pluginName);
+        if (!Directory.Exists(pluginDir))
+        {
+            throw new DirectoryNotFoundException(
+                $"Plugin directory not found: '{pluginDir}'.");
+        }
+
+        var resolvedVersion = version ?? ResolveLatestVersion(pluginDir);
+        var pluginDll = Path.Combine(pluginDir, resolvedVersion, $"{pluginName}.dll");
 
         if (!File.Exists(pluginDll))
         {
             throw new FileNotFoundException(
-                $"Plugin assembly not found at '{pluginDll}'. " +
-                $"Ensure the plugin is published to the plugins directory.");
+                $"Plugin assembly not found at '{pluginDll}'.");
         }
 
         _logger.LogInformation("Loading plugin from {PluginPath}", pluginDll);
-
         var loadContext = new PluginLoadContext(pluginDll);
-        var assemblyName = new AssemblyName(Path.GetFileNameWithoutExtension(pluginDll));
-        var assembly = loadContext.LoadFromAssemblyName(assemblyName);
-
+        var assembly = loadContext.LoadFromAssemblyName(
+            new AssemblyName(Path.GetFileNameWithoutExtension(pluginDll)));
         return CreatePlugin(assembly);
+    }
+
+    public IReadOnlyList<string> ListVersions(string pluginName)
+    {
+        var pluginDir = Path.Combine(_pluginsDirectory, pluginName);
+        if (!Directory.Exists(pluginDir)) return Array.Empty<string>();
+        return Directory.EnumerateDirectories(pluginDir)
+            .Select(Path.GetFileName)
+            .Where(n => !string.IsNullOrEmpty(n))
+            .OrderByDescending(ParseVersion)
+            .ToList()!;
+    }
+
+    public IReadOnlyList<string> ListPluginDirectories()
+    {
+        if (!Directory.Exists(_pluginsDirectory)) return Array.Empty<string>();
+        return Directory.EnumerateDirectories(_pluginsDirectory)
+            .Select(Path.GetFileName)
+            .Where(n => !string.IsNullOrEmpty(n))
+            .ToList()!;
+    }
+
+    private static Version ParseVersion(string s) =>
+        Version.TryParse(s, out var v) ? v : new Version(0, 0, 0);
+
+    private string ResolveLatestVersion(string pluginDir)
+    {
+        var versions = Directory.EnumerateDirectories(pluginDir)
+            .Select(Path.GetFileName)
+            .Where(n => !string.IsNullOrEmpty(n))
+            .OrderByDescending(ParseVersion)
+            .ToList();
+        if (versions.Count == 0)
+            throw new InvalidOperationException($"No versions present under '{pluginDir}'.");
+        return versions[0]!;
     }
 
     private static IIntegrationPlugin CreatePlugin(Assembly assembly)

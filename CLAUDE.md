@@ -15,8 +15,8 @@ dotnet build src/IntegrationPro.Worker/IntegrationPro.Worker.csproj
 dotnet run --project src/IntegrationPro.Worker/IntegrationPro.Worker.csproj
 
 # Publish plugins (each plugin must be published to its own directory)
-dotnet publish plugins/IntegrationPro.Plugin.PrismHR/IntegrationPro.Plugin.PrismHR.csproj -c Release -o ./plugins-output/IntegrationPro.Plugin.PrismHR
-dotnet publish plugins/IntegrationPro.Plugin.Mock/IntegrationPro.Plugin.Mock.csproj -c Release -o ./plugins-output/IntegrationPro.Plugin.Mock
+dotnet publish plugins/IntegrationPro.Plugin.PrismHR/IntegrationPro.Plugin.PrismHR.csproj -c Release -o ./plugins-output/IntegrationPro.Plugin.PrismHR/1.0.0
+dotnet publish plugins/IntegrationPro.Plugin.Mock/IntegrationPro.Plugin.Mock.csproj       -c Release -o ./plugins-output/IntegrationPro.Plugin.Mock/1.0.0
 
 # Docker build
 docker build -t integrationpro .
