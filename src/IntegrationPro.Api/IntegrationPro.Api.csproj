@@ -18,4 +18,21 @@
   <ItemGroup>
     <InternalsVisibleTo Include="IntegrationPro.Api.Tests" />
   </ItemGroup>
+  <PropertyGroup>
+    <UiDir>$(MSBuildThisFileDirectory)..\IntegrationPro.Api.Ui</UiDir>
+    <UiOut>$(MSBuildThisFileDirectory)wwwroot\ui</UiOut>
+  </PropertyGroup>
+  <ItemGroup>
+    <UiSourceFiles Include="$(UiDir)\src\**\*;$(UiDir)\index.html;$(UiDir)\package.json;$(UiDir)\package-lock.json;$(UiDir)\tsconfig.json;$(UiDir)\vite.config.ts" />
+  </ItemGroup>
+  <Target Name="BuildPlaygroundUi" BeforeTargets="Build" Condition="'$(SkipUiBuild)' != 'true'" Inputs="@(UiSourceFiles)" Outputs="$(UiOut)\index.html">
+    <Exec Command="npm ci" WorkingDirectory="$(UiDir)" Condition="!Exists('$(UiDir)\node_modules')" />
+    <Exec Command="npm run build" WorkingDirectory="$(UiDir)" />
+    <ItemGroup>
+      <UiBuiltFiles Include="$(UiDir)\dist\**\*" />
+    </ItemGroup>
+    <RemoveDir Directories="$(UiOut)" Condition="Exists('$(UiOut)')" />
+    <MakeDir Directories="$(UiOut)" />
+    <Copy SourceFiles="@(UiBuiltFiles)" DestinationFiles="@(UiBuiltFiles->'$(UiOut)\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>
