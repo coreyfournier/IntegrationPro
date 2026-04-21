@@ -4,7 +4,11 @@ export function ResponseView({ resp }: { resp: Response | null }) {
   const [body, setBody] = useState<string>("");
 
   useEffect(() => {
-    if (resp) resp.clone().text().then(setBody);
+    if (!resp) { setBody(""); return; }
+    let cancelled = false;
+    setBody("");
+    resp.clone().text().then(t => { if (!cancelled) setBody(t); });
+    return () => { cancelled = true; };
   }, [resp]);
 
   if (!resp) return null;

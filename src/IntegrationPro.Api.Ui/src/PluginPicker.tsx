@@ -10,16 +10,29 @@ export function PluginPicker({ onSelect }: { onSelect: (name: string, version: s
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [versions, setVersions] = useState<string[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setError(null);
     fetch(`/plugins?page=${page}&pageSize=50&search=${encodeURIComponent(search)}`)
-      .then(r => r.json()).then(b => { setItems(b.items); setTotal(b.total); });
+      .then(r => {
+        if (!r.ok) throw new Error(`GET /plugins failed: ${r.status}`);
+        return r.json();
+      })
+      .then(b => { setItems(b.items); setTotal(b.total); })
+      .catch(e => setError(e.message));
   }, [page, search]);
 
   useEffect(() => {
     if (!selectedName) return;
+    setError(null);
     fetch(`/plugins/${selectedName}/versions`)
-      .then(r => r.json()).then(b => { setVersions(b.versions); setSelectedVersion(b.versions[0] ?? null); });
+      .then(r => {
+        if (!r.ok) throw new Error(`GET /plugins/${selectedName}/versions failed: ${r.status}`);
+        return r.json();
+      })
+      .then(b => { setVersions(b.versions); setSelectedVersion(b.versions[0] ?? null); })
+      .catch(e => setError(e.message));
   }, [selectedName]);
 
   useEffect(() => {
@@ -28,6 +41,7 @@ export function PluginPicker({ onSelect }: { onSelect: (name: string, version: s
 
   return (
     <div>
+      {error && <div role="alert" style={{ color: "crimson", marginBottom: 8 }}>Error: {error}</div>}
       <input placeholder="search" value={search} onChange={e => { setPage(1); setSearch(e.target.value); }} />
       <ul>
         {items.map(i => (
