@@ -35,12 +35,20 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
                         Version: version,
                         Description: plugin.Description,
                         Config: JsonSchema.FromType(plugin.ConfigType, SchemaSettings()),
-                        Credentials: JsonSchema.FromType(plugin.CredentialsType, SchemaSettings()),
-                        Instance: plugin);
+                        Credentials: JsonSchema.FromType(plugin.CredentialsType, SchemaSettings()));
 
                     var versions = _index.GetOrAdd(plugin.Name, _ =>
                         new SortedDictionary<Version, Entry>(Comparer<Version>.Create((a, b) => b.CompareTo(a))));
-                    versions[Version.Parse(version)] = entry;
+
+                    var parsedVersion = Version.Parse(version);
+                    if (versions.TryGetValue(parsedVersion, out var existing) && existing.PluginDirName != pluginDir)
+                    {
+                        _logger.LogError(
+                            "Plugin friendly name collision: both '{ExistingDir}' and '{NewDir}' declare Name='{Name}' Version='{Version}'. Keeping '{ExistingDir}', skipping '{NewDir}'.",
+                            existing.PluginDirName, pluginDir, plugin.Name, version, existing.PluginDirName, pluginDir);
+                        continue;
+                    }
+                    versions[parsedVersion] = entry;
 
                     _logger.LogInformation("Cataloged plugin {Name} {Version}", plugin.Name, version);
                 }
@@ -50,6 +58,13 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
                 }
             }
         }
+
+        if (_index.IsEmpty)
+        {
+            _logger.LogWarning(
+                "Plugin catalog initialized with 0 plugins. Check that the plugins directory contains valid {{PluginName}}/{{Version}}/ subdirectories.");
+        }
+
         return Task.CompletedTask;
     }
 
@@ -71,10 +86,16 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
         return Task.FromResult(new PluginSchema(entry.FriendlyName, entry.Version, entry.Description, entry.Config, entry.Credentials));
     }
 
+    /// <summary>
+    /// Resolve a plugin instance. Null version => latest.
+    /// Returns a fresh instance per call — plugins may hold per-request state on instance fields,
+    /// so callers get an isolated instance for their request lifecycle.
+    /// </summary>
     public Task<IIntegrationPlugin> ResolveAsync(string pluginName, string? version, CancellationToken cancellationToken = default)
     {
         var entry = version is null ? FindLatest(pluginName) : Find(pluginName, version);
-        return Task.FromResult(entry.Instance);
+        var plugin = _loader.LoadPlugin(entry.PluginDirName, entry.Version);
+        return Task.FromResult(plugin);
     }
 
     private Entry FindLatest(string pluginName)
@@ -109,6 +130,5 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
         string Version,
         string Description,
         JsonSchema Config,
-        JsonSchema Credentials,
-        IIntegrationPlugin Instance);
+        JsonSchema Credentials);
 }

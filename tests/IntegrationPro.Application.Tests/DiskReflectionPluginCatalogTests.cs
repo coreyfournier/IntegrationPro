@@ -86,4 +86,17 @@ public sealed class DiskReflectionPluginCatalogTests : IAsyncLifetime
         plugin.Name.Should().Be("Mock");
         plugin.Version.Should().Be("1.0.0");
     }
+
+    [Fact]
+    public async Task ResolveAsync_returns_fresh_instance_per_call()
+    {
+        var loader = new PluginLoader(_pluginsDir, NullLogger<PluginLoader>.Instance);
+        var catalog = new DiskReflectionPluginCatalog(loader, NullLogger<DiskReflectionPluginCatalog>.Instance);
+        await catalog.InitializeAsync();
+
+        var first = await catalog.ResolveAsync("Mock", version: null);
+        var second = await catalog.ResolveAsync("Mock", version: null);
+
+        first.Should().NotBeSameAs(second, "each Resolve call should return an isolated instance so plugin _context-style fields don't race across requests");
+    }
 }
