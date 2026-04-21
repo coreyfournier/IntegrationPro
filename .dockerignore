@@ -7,3 +7,5 @@
 **/.idea
 *.user
 *.suo
+src/IntegrationPro.Api/wwwroot/ui/
+src/IntegrationPro.Api.Ui/dist/

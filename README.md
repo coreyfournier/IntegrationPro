@@ -325,6 +325,14 @@ The Api listens on port `8081` by default. Swagger lives at `/swagger`, the play
 | `GET` | `/plugins/{name}/{version}/schema` | Get the JSON Schema for credentials + configuration |
 | `POST` | `/integrations/run` | Execute a plugin synchronously and return the emitted data |
 
+### Health
+
+- `GET /healthz/live` — Liveness probe. Returns 200 while the process is running.
+- `GET /healthz/ready` — Readiness probe. Returns 200 when the plugin catalog
+  has loaded; reports unhealthy if the catalog failed to load all plugins at
+  startup, and reports the latest job status once at least one job has been
+  processed.
+
 ### Docker
 
 The Api has its own Dockerfile at `src/IntegrationPro.Api/Dockerfile`. It is a multi-stage build: Node stage compiles the React playground, the .NET SDK stage publishes the Api (with `SkipUiBuild=true` so MSBuild doesn't re-run npm) and both bundled plugins, and the aspnet runtime stage assembles the final image.
