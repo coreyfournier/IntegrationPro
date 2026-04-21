@@ -30,7 +30,7 @@ public sealed class PluginLoader
         if (!Directory.Exists(pluginDir))
         {
             throw new DirectoryNotFoundException(
-                $"Plugin directory not found: '{pluginDir}'.");
+                $"Plugin directory not found: '{pluginDir}'. Expected layout: '{_pluginsDirectory}/{{pluginName}}/{{version}}/{{pluginName}}.dll'.");
         }
 
         var resolvedVersion = version ?? ResolveLatestVersion(pluginDir);
@@ -39,7 +39,7 @@ public sealed class PluginLoader
         if (!File.Exists(pluginDll))
         {
             throw new FileNotFoundException(
-                $"Plugin assembly not found at '{pluginDll}'.");
+                $"Plugin assembly not found at '{pluginDll}'. Ensure the plugin is published to '{pluginDir}/{resolvedVersion}/'.");
         }
 
         _logger.LogInformation("Loading plugin from {PluginPath}", pluginDll);
@@ -54,19 +54,19 @@ public sealed class PluginLoader
         var pluginDir = Path.Combine(_pluginsDirectory, pluginName);
         if (!Directory.Exists(pluginDir)) return Array.Empty<string>();
         return Directory.EnumerateDirectories(pluginDir)
-            .Select(Path.GetFileName)
+            .Select(p => Path.GetFileName(p)!)
             .Where(n => !string.IsNullOrEmpty(n))
             .OrderByDescending(ParseVersion)
-            .ToList()!;
+            .ToList();
     }
 
     public IReadOnlyList<string> ListPluginDirectories()
     {
         if (!Directory.Exists(_pluginsDirectory)) return Array.Empty<string>();
         return Directory.EnumerateDirectories(_pluginsDirectory)
-            .Select(Path.GetFileName)
+            .Select(p => Path.GetFileName(p)!)
             .Where(n => !string.IsNullOrEmpty(n))
-            .ToList()!;
+            .ToList();
     }
 
     private static Version ParseVersion(string s) =>
@@ -75,13 +75,14 @@ public sealed class PluginLoader
     private string ResolveLatestVersion(string pluginDir)
     {
         var versions = Directory.EnumerateDirectories(pluginDir)
-            .Select(Path.GetFileName)
+            .Select(p => Path.GetFileName(p)!)
             .Where(n => !string.IsNullOrEmpty(n))
             .OrderByDescending(ParseVersion)
             .ToList();
         if (versions.Count == 0)
-            throw new InvalidOperationException($"No versions present under '{pluginDir}'.");
-        return versions[0]!;
+            throw new DirectoryNotFoundException(
+                $"No version subdirectories found under '{pluginDir}'. Expected '{pluginDir}/{{version}}/{{pluginName}}.dll'.");
+        return versions[0];
     }
 
     private static IIntegrationPlugin CreatePlugin(Assembly assembly)
