@@ -13,6 +13,9 @@ public sealed class MockPlugin : IIntegrationPlugin
 {
     public string Name => "Mock";
     public string Description => "Generates mock company data for testing the ETL pipeline";
+    public string Version => "1.0.0";
+    public Type ConfigType => typeof(MockConfig);
+    public Type CredentialsType => typeof(MockCredentials);
 
     private PluginContext _context = null!;
 
