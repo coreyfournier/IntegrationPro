@@ -1,4 +1,4 @@
-using NJsonSchema;
+using System.Text.Json.Nodes;
 
 namespace IntegrationPro.Application.Catalog;
 
@@ -6,5 +6,5 @@ public sealed record PluginSchema(
     string Name,
     string Version,
     string Description,
-    JsonSchema Config,
-    JsonSchema Credentials);
+    JsonObject Config,
+    JsonObject Credentials);

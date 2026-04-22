@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using FluentAssertions;
 using IntegrationPro.Application.Catalog;
 using IntegrationPro.Application.PluginLoading;
@@ -71,8 +72,8 @@ public sealed class DiskReflectionPluginCatalogTests : IAsyncLifetime
 
         schema.Name.Should().Be("Mock");
         schema.Version.Should().Be("1.0.0");
-        schema.Config.Properties.Should().ContainKey("companyCount");
-        schema.Credentials.Properties.Should().ContainKey("username");
+        schema.Config["properties"]!.AsObject().Should().ContainKey("companyCount");
+        schema.Credentials["properties"]!.AsObject().Should().ContainKey("username");
     }
 
     [Fact]

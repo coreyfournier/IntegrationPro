@@ -38,8 +38,13 @@ public sealed class SyncExecutor
             return SyncResult.NotFound(requestId, request);
         }
 
-        var credErrors = schema.Credentials.Validate(request.Credentials.ToJsonString());
-        var cfgErrors  = schema.Config.Validate(request.Configuration.ToJsonString());
+        // Parse our JsonObject schemas into NJsonSchema fresh per request.
+        // (Catalog stores JsonObject — not an NJsonSchema.JsonSchema — to avoid
+        // cross-ALC schema-cache collisions between plugin versions.)
+        var credJsonSchema = await NJsonSchema.JsonSchema.FromJsonAsync(schema.Credentials.ToJsonString(), ct);
+        var configJsonSchema = await NJsonSchema.JsonSchema.FromJsonAsync(schema.Config.ToJsonString(), ct);
+        var credErrors = credJsonSchema.Validate(request.Credentials.ToJsonString());
+        var cfgErrors  = configJsonSchema.Validate(request.Configuration.ToJsonString());
         if (credErrors.Count > 0 || cfgErrors.Count > 0)
             return SyncResult.Validation(requestId, request,
                 credErrors.Select(e => "credentials: " + e).Concat(cfgErrors.Select(e => "configuration: " + e)).ToList());

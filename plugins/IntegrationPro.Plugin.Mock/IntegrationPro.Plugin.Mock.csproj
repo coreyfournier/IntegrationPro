@@ -5,6 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDynamicLoading>true</EnableDynamicLoading>
+    <!-- Keep in sync with MockPlugin.Version so each build has a distinct
+         AssemblyQualifiedName. NJsonSchema caches generated schemas by AQN,
+         so two versions with identical AssemblyVersion would collide. -->
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

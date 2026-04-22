@@ -32,10 +32,8 @@ public static class PluginEndpoints
             try
             {
                 var schema = await catalog.GetSchemaAsync(name, version, ct);
-                var config = JsonNode.Parse(schema.Config.ToJson())!.AsObject();
-                var creds  = JsonNode.Parse(schema.Credentials.ToJson())!.AsObject();
                 return Results.Ok(new PluginSchemaResponse(
-                    schema.Name, schema.Version, schema.Description, config, creds));
+                    schema.Name, schema.Version, schema.Description, schema.Config, schema.Credentials));
             }
             catch (KeyNotFoundException)
             {

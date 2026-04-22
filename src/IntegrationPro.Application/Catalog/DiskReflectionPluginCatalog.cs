@@ -1,9 +1,8 @@
 using System.Collections.Concurrent;
+using System.Text.Json.Nodes;
 using IntegrationPro.Application.PluginLoading;
 using IntegrationPro.PluginBase;
 using Microsoft.Extensions.Logging;
-using NJsonSchema;
-using NJsonSchema.Generation;
 
 namespace IntegrationPro.Application.Catalog;
 
@@ -34,8 +33,8 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
                         PluginDirName: pluginDir,
                         Version: version,
                         Description: plugin.Description,
-                        Config: JsonSchema.FromType(plugin.ConfigType, SchemaSettings()),
-                        Credentials: JsonSchema.FromType(plugin.CredentialsType, SchemaSettings()),
+                        Config: PocoSchemaBuilder.Build(plugin.ConfigType),
+                        Credentials: PocoSchemaBuilder.Build(plugin.CredentialsType),
                         PluginType: plugin.GetType());
 
                     var versions = _index.GetOrAdd(plugin.Name, _ =>
@@ -84,7 +83,11 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
     public Task<PluginSchema> GetSchemaAsync(string pluginName, string version, CancellationToken cancellationToken = default)
     {
         var entry = Find(pluginName, version);
-        return Task.FromResult(new PluginSchema(entry.FriendlyName, entry.Version, entry.Description, entry.Config, entry.Credentials));
+        // Clone so callers can't mutate the cached schema objects.
+        return Task.FromResult(new PluginSchema(
+            entry.FriendlyName, entry.Version, entry.Description,
+            (JsonObject)entry.Config.DeepClone(),
+            (JsonObject)entry.Credentials.DeepClone()));
     }
 
     /// <summary>
@@ -115,25 +118,12 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
         return entry;
     }
 
-    private static SystemTextJsonSchemaGeneratorSettings SchemaSettings() => new()
-    {
-        SchemaType = SchemaType.JsonSchema,
-        DefaultReferenceTypeNullHandling = ReferenceTypeNullHandling.NotNull,
-        SerializerOptions = new System.Text.Json.JsonSerializerOptions
-        {
-            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-            // Emit enums as their string names so the generated schema lists
-            // "enum": ["Mixed", "Tech", ...] instead of integers.
-            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
-        },
-    };
-
     private sealed record Entry(
         string FriendlyName,
         string PluginDirName,
         string Version,
         string Description,
-        JsonSchema Config,
-        JsonSchema Credentials,
+        JsonObject Config,
+        JsonObject Credentials,
         Type PluginType);
 }
