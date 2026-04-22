@@ -27,7 +27,9 @@ export function ResponseView({ resp }: { resp: Response | null }) {
 
   const ct = resp.headers.get("content-type") ?? "";
   if (resp.status >= 400) {
-    return <pre style={{ ...baseStyle, background: "#fee", borderColor: "#f5c2c2" }}>{body}</pre>;
+    let formatted = body;
+    try { formatted = JSON.stringify(JSON.parse(body), null, 2); } catch { /* keep raw */ }
+    return <pre style={{ ...baseStyle, background: "#fee", borderColor: "#f5c2c2" }}>{formatted}</pre>;
   }
   if (ct.includes("application/json")) {
     try {

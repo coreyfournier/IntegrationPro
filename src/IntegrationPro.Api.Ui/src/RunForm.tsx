@@ -1,6 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Form from "@rjsf/core";
 import validator from "@rjsf/validator-ajv8";
+
+const errorBoxStyle: CSSProperties = {
+  background: "#fee",
+  border: "1px solid #f5c2c2",
+  borderRadius: 4,
+  padding: 12,
+  marginBottom: 8,
+  fontFamily: "ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace",
+  fontSize: 13,
+  overflow: "auto",
+  whiteSpace: "pre-wrap",
+  color: "crimson",
+};
 
 export function RunForm({ name, version, onResult }: {
   name: string; version: string; onResult: (resp: Response) => void;
@@ -42,12 +55,12 @@ export function RunForm({ name, version, onResult }: {
   }
 
   if (error && !schema) {
-    return <div role="alert" style={{ color: "crimson" }}>Error: {error}</div>;
+    return <pre role="alert" style={errorBoxStyle}>Error: {error}</pre>;
   }
   if (!schema) return <div>Loading schema…</div>;
   return (
     <div>
-      {error && <div role="alert" style={{ color: "crimson", marginBottom: 8 }}>Error: {error}</div>}
+      {error && <pre role="alert" style={errorBoxStyle}>Error: {error}</pre>}
       <div style={{ display: "flex", gap: 16 }}>
         <div>
           <h3>Credentials</h3>

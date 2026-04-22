@@ -1,6 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 type Summary = { name: string; latestVersion: string; description: string };
+
+const errorBoxStyle: CSSProperties = {
+  background: "#fee",
+  border: "1px solid #f5c2c2",
+  borderRadius: 4,
+  padding: 12,
+  marginBottom: 8,
+  fontFamily: "ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace",
+  fontSize: 13,
+  overflow: "auto",
+  whiteSpace: "pre-wrap",
+  color: "crimson",
+};
 
 export function PluginPicker({ onSelect }: { onSelect: (name: string, version: string) => void }) {
   const [items, setItems] = useState<Summary[]>([]);
@@ -41,7 +54,7 @@ export function PluginPicker({ onSelect }: { onSelect: (name: string, version: s
 
   return (
     <div>
-      {error && <div role="alert" style={{ color: "crimson", marginBottom: 8 }}>Error: {error}</div>}
+      {error && <pre role="alert" style={errorBoxStyle}>Error: {error}</pre>}
       <input placeholder="search" value={search} onChange={e => { setPage(1); setSearch(e.target.value); }} />
       <ul>
         {items.map(i => (
