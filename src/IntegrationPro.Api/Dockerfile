@@ -16,6 +16,7 @@ COPY src/IntegrationPro.Worker/IntegrationPro.Worker.csproj src/IntegrationPro.W
 COPY src/IntegrationPro.Api/IntegrationPro.Api.csproj src/IntegrationPro.Api/
 COPY plugins/IntegrationPro.Plugin.PrismHR/IntegrationPro.Plugin.PrismHR.csproj plugins/IntegrationPro.Plugin.PrismHR/
 COPY plugins/IntegrationPro.Plugin.Mock/IntegrationPro.Plugin.Mock.csproj plugins/IntegrationPro.Plugin.Mock/
+COPY plugins/IntegrationPro.Plugin.SecEdgar/IntegrationPro.Plugin.SecEdgar.csproj plugins/IntegrationPro.Plugin.SecEdgar/
 COPY tests/IntegrationPro.Application.Tests/IntegrationPro.Application.Tests.csproj tests/IntegrationPro.Application.Tests/
 COPY tests/IntegrationPro.Api.Tests/IntegrationPro.Api.Tests.csproj tests/IntegrationPro.Api.Tests/
 COPY tests/IntegrationPro.TestHarness/IntegrationPro.TestHarness.csproj tests/IntegrationPro.TestHarness/
@@ -30,6 +31,7 @@ COPY --from=ui /ui/dist/ src/IntegrationPro.Api/wwwroot/ui/
 RUN dotnet publish src/IntegrationPro.Api/IntegrationPro.Api.csproj -c Release -o /app/publish /p:SkipUiBuild=true --no-restore
 RUN dotnet publish plugins/IntegrationPro.Plugin.PrismHR/IntegrationPro.Plugin.PrismHR.csproj -c Release -o /app/plugins/IntegrationPro.Plugin.PrismHR/1.0.0 --no-restore
 RUN dotnet publish plugins/IntegrationPro.Plugin.Mock/IntegrationPro.Plugin.Mock.csproj         -c Release -o /app/plugins/IntegrationPro.Plugin.Mock/1.0.0 --no-restore
+RUN dotnet publish plugins/IntegrationPro.Plugin.SecEdgar/IntegrationPro.Plugin.SecEdgar.csproj -c Release -o /app/plugins/IntegrationPro.Plugin.SecEdgar/1.0.0 --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
