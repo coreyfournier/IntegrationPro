@@ -26,14 +26,17 @@ export function RunForm({ name, version, onResult }: {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setError(null);
+    setSchema(null);
     fetch(`/plugins/${name}/${version}/schema`)
       .then(r => {
         if (!r.ok) throw new Error(`GET schema failed: ${r.status}`);
         return r.json();
       })
-      .then(setSchema)
-      .catch(e => setError(e.message));
+      .then(s => { if (!cancelled) setSchema(s); })
+      .catch(e => { if (!cancelled) setError(e.message); });
+    return () => { cancelled = true; };
   }, [name, version]);
 
   async function run() {

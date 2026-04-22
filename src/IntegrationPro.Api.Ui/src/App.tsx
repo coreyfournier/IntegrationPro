@@ -9,13 +9,21 @@ export function App() {
 
   const handleSelect = useCallback((name: string, version: string) => {
     setSelection({ name, version });
+    setResp(null);
   }, []);
 
   return (
     <div style={{ fontFamily: "system-ui", padding: 16 }}>
       <h1>IntegrationPro Playground</h1>
       <PluginPicker onSelect={handleSelect} />
-      {selection && <RunForm name={selection.name} version={selection.version} onResult={setResp} />}
+      {selection && (
+        <RunForm
+          key={`${selection.name}@${selection.version}`}
+          name={selection.name}
+          version={selection.version}
+          onResult={setResp}
+        />
+      )}
       <ResponseView resp={resp} />
     </div>
   );
