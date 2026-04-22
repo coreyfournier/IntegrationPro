@@ -69,5 +69,8 @@ public sealed class IntegrationEndpointsTests : IClassFixture<ApiTestFixture>
         var err = await resp.Content.ReadFromJsonAsync<ErrorResponse>();
         err!.Status.Should().Be("Failed");
         err.Error.Message.Should().Contain("Simulated");
+        err.Error.Category.Should().Be("unexpected");
+        err.Error.ExceptionType.Should().Be("InvalidOperationException");
+        err.Error.Retryable.Should().BeNull();
     }
 }

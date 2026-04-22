@@ -70,7 +70,7 @@ public sealed class SyncExecutor
         catch (Exception ex)
         {
             _logger.LogError(ex, "Plugin execution failed for {RequestId}", requestId);
-            return SyncResult.Failed(requestId, request, ex.Message);
+            return SyncResult.Failed(requestId, request, ex);
         }
         finally
         {
