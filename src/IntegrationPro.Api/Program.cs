@@ -12,8 +12,8 @@ var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseStaticFiles();
 app.UseDefaultFiles();
+app.UseStaticFiles();
 
 PluginEndpoints.Map(app);
 IntegrationEndpoints.Map(app);
