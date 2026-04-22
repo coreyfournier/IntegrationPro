@@ -62,13 +62,13 @@ public sealed class IntegrationEndpointsTests : IClassFixture<ApiTestFixture>
         var req = new RunIntegrationRequest(
             PluginName: "Mock", Version: "1.0.0", TimeoutSeconds: 10,
             Credentials: new JsonObject { ["username"] = "u", ["password"] = "p" },
-            Configuration: new JsonObject { ["companyCount"] = 4, ["simulateFailure"] = true, ["delayMs"] = 0 });
+            Configuration: new JsonObject { ["companyCount"] = 4, ["failureMode"] = "Halfway", ["delayMs"] = 0 });
 
         var resp = await client.PostAsJsonAsync("/integrations/run", req);
         resp.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         var err = await resp.Content.ReadFromJsonAsync<ErrorResponse>();
         err!.Status.Should().Be("Failed");
-        err.Error.Message.Should().Contain("Simulated");
+        err.Error.Message.Should().Contain("Halfway");
         err.Error.Category.Should().Be("unexpected");
         err.Error.ExceptionType.Should().Be("InvalidOperationException");
         err.Error.Retryable.Should().BeNull();

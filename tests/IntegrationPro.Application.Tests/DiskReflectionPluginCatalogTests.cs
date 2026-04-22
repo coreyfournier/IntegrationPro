@@ -84,7 +84,7 @@ public sealed class DiskReflectionPluginCatalogTests : IAsyncLifetime
 
         var plugin = await catalog.ResolveAsync("Mock", version: null);
         plugin.Name.Should().Be("Mock");
-        plugin.Version.Should().Be("1.0.0");
+        plugin.Version.Should().Be("1.1.0");
     }
 
     [Fact]

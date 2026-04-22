@@ -20,7 +20,7 @@ RUN dotnet publish src/IntegrationPro.Worker/IntegrationPro.Worker.csproj -c Rel
 
 # Publish plugins to their own directories so the PluginLoader can find them
 RUN dotnet publish plugins/IntegrationPro.Plugin.PrismHR/IntegrationPro.Plugin.PrismHR.csproj -c Release -o /app/plugins/IntegrationPro.Plugin.PrismHR/1.0.0
-RUN dotnet publish plugins/IntegrationPro.Plugin.Mock/IntegrationPro.Plugin.Mock.csproj         -c Release -o /app/plugins/IntegrationPro.Plugin.Mock/1.0.0
+RUN dotnet publish plugins/IntegrationPro.Plugin.Mock/IntegrationPro.Plugin.Mock.csproj         -c Release -o /app/plugins/IntegrationPro.Plugin.Mock/1.1.0
 RUN dotnet publish plugins/IntegrationPro.Plugin.SecEdgar/IntegrationPro.Plugin.SecEdgar.csproj -c Release -o /app/plugins/IntegrationPro.Plugin.SecEdgar/1.0.0
 
 # Runtime image

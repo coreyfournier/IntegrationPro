@@ -122,6 +122,9 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
         SerializerOptions = new System.Text.Json.JsonSerializerOptions
         {
             PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            // Emit enums as their string names so the generated schema lists
+            // "enum": ["Mixed", "Tech", ...] instead of integers.
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
         },
     };
 

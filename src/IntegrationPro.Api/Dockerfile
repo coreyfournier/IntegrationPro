@@ -30,7 +30,7 @@ COPY --from=ui /ui/dist/ src/IntegrationPro.Api/wwwroot/ui/
 
 RUN dotnet publish src/IntegrationPro.Api/IntegrationPro.Api.csproj -c Release -o /app/publish /p:SkipUiBuild=true --no-restore
 RUN dotnet publish plugins/IntegrationPro.Plugin.PrismHR/IntegrationPro.Plugin.PrismHR.csproj -c Release -o /app/plugins/IntegrationPro.Plugin.PrismHR/1.0.0 --no-restore
-RUN dotnet publish plugins/IntegrationPro.Plugin.Mock/IntegrationPro.Plugin.Mock.csproj         -c Release -o /app/plugins/IntegrationPro.Plugin.Mock/1.0.0 --no-restore
+RUN dotnet publish plugins/IntegrationPro.Plugin.Mock/IntegrationPro.Plugin.Mock.csproj         -c Release -o /app/plugins/IntegrationPro.Plugin.Mock/1.1.0 --no-restore
 RUN dotnet publish plugins/IntegrationPro.Plugin.SecEdgar/IntegrationPro.Plugin.SecEdgar.csproj -c Release -o /app/plugins/IntegrationPro.Plugin.SecEdgar/1.0.0 --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
