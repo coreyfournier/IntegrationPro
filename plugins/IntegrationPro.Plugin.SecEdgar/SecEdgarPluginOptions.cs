@@ -6,6 +6,7 @@ namespace IntegrationPro.Plugin.SecEdgar;
 public sealed class SecEdgarConfig
 {
     [Description("SEC EDGAR API base URL.")]
+    [DefaultValue("https://data.sec.gov")]
     public string BaseUrl { get; init; } = "https://data.sec.gov";
 
     [Required, Description("Comma-separated CIK numbers to fetch (e.g., '320193,789019'). Leading zeros are padded automatically.")]
