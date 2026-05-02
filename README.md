@@ -239,6 +239,17 @@ dotnet publish plugins/IntegrationPro.Plugin.PrismHR -c Release -o plugins-outpu
 dotnet run --project src/IntegrationPro.Worker/IntegrationPro.Worker.csproj
 ```
 
+##### Test deploy plugins
+
+Push the plugin to your local build directory
+```
+dotnet publish plugins/IntegrationPro.Plugin.PrismHR/IntegrationPro.Plugin.PrismHR.csproj -c Release -o C:\Projects\IntegrationPro\src\IntegrationPro.Api\bin\Debug\net8.0/plugins-output/IntegrationPro.Plugin.PrismHR/1.0.0
+```
+Make a change to the plugin, update the version in the config and path, and publish again. Make sure to click the refresh button.
+```
+dotnet publish plugins/IntegrationPro.Plugin.PrismHR/IntegrationPro.Plugin.PrismHR.csproj -c Release -o C:\Projects\IntegrationPro\src\IntegrationPro.Api\bin\Debug\net8.0/plugins-output/IntegrationPro.Plugin.PrismHR/1.0.1
+```
+
 Requires a valid `ServiceBus:ConnectionString` in configuration or environment variables.
 
 ### Test with Mock Plugin

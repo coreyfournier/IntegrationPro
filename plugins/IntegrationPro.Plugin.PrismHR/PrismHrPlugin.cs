@@ -13,7 +13,7 @@ public sealed class PrismHrPlugin : IIntegrationPlugin
 {
     public string Name => "PrismHR";
     public string Description => "Extracts company information from PrismHR payroll system";
-    public string Version => "1.0.0";
+    public string Version => "1.0.1";
     public Type ConfigType => typeof(PrismHrConfig);
     public Type CredentialsType => typeof(PrismHrCredentials);
 

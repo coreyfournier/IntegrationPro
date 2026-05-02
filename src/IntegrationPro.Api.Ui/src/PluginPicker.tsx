@@ -24,6 +24,21 @@ export function PluginPicker({ onSelect }: { onSelect: (name: string, version: s
   const [versions, setVersions] = useState<string[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setError(null);
+    fetch("/plugins/refresh", { method: "POST" })
+      .then(r => {
+        if (!r.ok) throw new Error(`POST /plugins/refresh failed: ${r.status}`);
+        return r.json();
+      })
+      .then(() => setRefreshKey(k => k + 1))
+      .catch(e => setError(e.message))
+      .finally(() => setRefreshing(false));
+  };
 
   useEffect(() => {
     setError(null);
@@ -34,7 +49,7 @@ export function PluginPicker({ onSelect }: { onSelect: (name: string, version: s
       })
       .then(b => { setItems(b.items); setTotal(b.total); })
       .catch(e => setError(e.message));
-  }, [page, search]);
+  }, [page, search, refreshKey]);
 
   useEffect(() => {
     if (!selectedName) return;
@@ -46,7 +61,7 @@ export function PluginPicker({ onSelect }: { onSelect: (name: string, version: s
       })
       .then(b => { setVersions(b.versions); setSelectedVersion(b.versions[0] ?? null); })
       .catch(e => setError(e.message));
-  }, [selectedName]);
+  }, [selectedName, refreshKey]);
 
   useEffect(() => {
     if (selectedName && selectedVersion) onSelect(selectedName, selectedVersion);
@@ -55,7 +70,12 @@ export function PluginPicker({ onSelect }: { onSelect: (name: string, version: s
   return (
     <div>
       {error && <pre role="alert" style={errorBoxStyle}>Error: {error}</pre>}
-      <input placeholder="search" value={search} onChange={e => { setPage(1); setSearch(e.target.value); }} />
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+        <input placeholder="search" value={search} onChange={e => { setPage(1); setSearch(e.target.value); }} />
+        <button onClick={handleRefresh} disabled={refreshing}>
+          {refreshing ? "Refreshing…" : "Refresh Plugins"}
+        </button>
+      </div>
       <ul>
         {items.map(i => (
           <li key={i.name}>

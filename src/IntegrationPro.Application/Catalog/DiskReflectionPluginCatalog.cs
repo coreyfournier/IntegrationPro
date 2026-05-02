@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 using IntegrationPro.Application.PluginLoading;
 using IntegrationPro.PluginBase;
@@ -10,8 +9,9 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
 {
     private readonly PluginLoader _loader;
     private readonly ILogger<DiskReflectionPluginCatalog> _logger;
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
-    private readonly ConcurrentDictionary<string, SortedDictionary<Version, Entry>> _index = new();
+    private volatile Dictionary<string, SortedDictionary<Version, Entry>> _index = new();
 
     public DiskReflectionPluginCatalog(PluginLoader loader, ILogger<DiskReflectionPluginCatalog> logger)
     {
@@ -21,64 +21,52 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
 
     public Task InitializeAsync()
     {
-        foreach (var pluginDir in _loader.ListPluginDirectories())
-        {
-            foreach (var version in _loader.ListVersions(pluginDir))
-            {
-                try
-                {
-                    var plugin = _loader.LoadPlugin(pluginDir, version);
-                    var entry = new Entry(
-                        FriendlyName: plugin.Name,
-                        PluginDirName: pluginDir,
-                        Version: version,
-                        Description: plugin.Description,
-                        Config: PocoSchemaBuilder.Build(plugin.ConfigType),
-                        Credentials: PocoSchemaBuilder.Build(plugin.CredentialsType),
-                        PluginType: plugin.GetType());
+        var newIndex = BuildIndex();
 
-                    var versions = _index.GetOrAdd(plugin.Name, _ =>
-                        new SortedDictionary<Version, Entry>(Comparer<Version>.Create((a, b) => b.CompareTo(a))));
-
-                    var parsedVersion = Version.Parse(version);
-                    if (versions.TryGetValue(parsedVersion, out var existing) && existing.PluginDirName != pluginDir)
-                    {
-                        _logger.LogError(
-                            "Plugin friendly name collision: both '{ExistingDir}' and '{NewDir}' declare Name='{Name}' Version='{Version}'. Keeping '{ExistingDir}', skipping '{NewDir}'.",
-                            existing.PluginDirName, pluginDir, plugin.Name, version, existing.PluginDirName, pluginDir);
-                        continue;
-                    }
-                    versions[parsedVersion] = entry;
-
-                    _logger.LogInformation("Cataloged plugin {Name} {Version}", plugin.Name, version);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to load plugin from {Dir}/{Version}", pluginDir, version);
-                }
-            }
-        }
-
-        if (_index.IsEmpty)
+        if (newIndex.Count == 0)
         {
             _logger.LogWarning(
                 "Plugin catalog initialized with 0 plugins. Check that the plugins directory contains valid {{PluginName}}/{{Version}}/ subdirectories.");
         }
 
+        _index = newIndex;
         return Task.CompletedTask;
     }
 
-    public IReadOnlyList<PluginSummary> ListPlugins() =>
-        _index.Select(kvp =>
+    public async Task<int> RefreshAsync(CancellationToken cancellationToken = default)
+    {
+        await _refreshLock.WaitAsync(cancellationToken);
+        try
+        {
+            _logger.LogInformation("Plugin catalog refresh started.");
+            var newIndex = BuildIndex();
+            Interlocked.Exchange(ref _index, newIndex);
+            _logger.LogInformation("Plugin catalog refresh completed. {Count} plugin(s) loaded.", newIndex.Count);
+            return newIndex.Count;
+        }
+        finally
+        {
+            _refreshLock.Release();
+        }
+    }
+
+    public IReadOnlyList<PluginSummary> ListPlugins()
+    {
+        var index = _index;
+        return index.Select(kvp =>
         {
             var latest = kvp.Value.First().Value;
             return new PluginSummary(kvp.Key, latest.Version, latest.Description);
         }).OrderBy(s => s.Name).ToList();
+    }
 
-    public IReadOnlyList<string> ListVersions(string pluginName) =>
-        _index.TryGetValue(pluginName, out var versions)
+    public IReadOnlyList<string> ListVersions(string pluginName)
+    {
+        var index = _index;
+        return index.TryGetValue(pluginName, out var versions)
             ? versions.Keys.Select(v => v.ToString()).ToList()
             : Array.Empty<string>();
+    }
 
     public Task<PluginSchema> GetSchemaAsync(string pluginName, string version, CancellationToken cancellationToken = default)
     {
@@ -104,18 +92,68 @@ public sealed class DiskReflectionPluginCatalog : IPluginCatalog
 
     private Entry FindLatest(string pluginName)
     {
-        if (!_index.TryGetValue(pluginName, out var versions) || versions.Count == 0)
+        var index = _index;
+        if (!index.TryGetValue(pluginName, out var versions) || versions.Count == 0)
             throw new KeyNotFoundException($"Plugin '{pluginName}' not found.");
         return versions.First().Value;
     }
 
     private Entry Find(string pluginName, string version)
     {
-        if (!_index.TryGetValue(pluginName, out var versions))
+        var index = _index;
+        if (!index.TryGetValue(pluginName, out var versions))
             throw new KeyNotFoundException($"Plugin '{pluginName}' not found.");
         if (!versions.TryGetValue(Version.Parse(version), out var entry))
             throw new KeyNotFoundException($"Plugin '{pluginName}' version '{version}' not found.");
         return entry;
+    }
+
+    private Dictionary<string, SortedDictionary<Version, Entry>> BuildIndex()
+    {
+        var newIndex = new Dictionary<string, SortedDictionary<Version, Entry>>();
+
+        foreach (var pluginDir in _loader.ListPluginDirectories())
+        {
+            foreach (var version in _loader.ListVersions(pluginDir))
+            {
+                try
+                {
+                    var plugin = _loader.LoadPlugin(pluginDir, version);
+                    var entry = new Entry(
+                        FriendlyName: plugin.Name,
+                        PluginDirName: pluginDir,
+                        Version: version,
+                        Description: plugin.Description,
+                        Config: PocoSchemaBuilder.Build(plugin.ConfigType),
+                        Credentials: PocoSchemaBuilder.Build(plugin.CredentialsType),
+                        PluginType: plugin.GetType());
+
+                    if (!newIndex.TryGetValue(plugin.Name, out var versions))
+                    {
+                        versions = new SortedDictionary<Version, Entry>(Comparer<Version>.Create((a, b) => b.CompareTo(a)));
+                        newIndex[plugin.Name] = versions;
+                    }
+
+                    var parsedVersion = Version.Parse(version);
+                    if (versions.TryGetValue(parsedVersion, out var existing) && existing.PluginDirName != pluginDir)
+                    {
+                        _logger.LogError(
+                            "Plugin friendly name collision: both '{ExistingDir}' and '{NewDir}' declare Name='{Name}' Version='{Version}'. Keeping '{ExistingDir}', skipping '{NewDir}'.",
+                            existing.PluginDirName, pluginDir, plugin.Name, version, existing.PluginDirName, pluginDir);
+                        continue;
+                    }
+                    versions[parsedVersion] = entry;
+
+                    _logger.LogInformation("Cataloged plugin {Name} {Version}", plugin.Name, version);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to load plugin from {Dir}/{Version}", pluginDir, version);
+                }
+            }
+        }
+
+        return newIndex;
     }
 
     private sealed record Entry(

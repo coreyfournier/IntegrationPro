@@ -11,7 +11,7 @@ public sealed class PrismHrConfig
 
 public sealed class PrismHrCredentials
 {
-    [Required, Description("PrismHR username.")]
+    [Required, Description("PrismHR username1.")]
     public string Username { get; init; } = "";
 
     [Required, Description("PrismHR password.")]

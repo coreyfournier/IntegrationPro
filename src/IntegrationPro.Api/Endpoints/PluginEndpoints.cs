@@ -40,5 +40,13 @@ public static class PluginEndpoints
                 return Results.NotFound();
             }
         });
+
+        app.MapPost("/plugins/refresh", async (IPluginCatalog catalog, CancellationToken ct) =>
+        {
+            var count = await catalog.RefreshAsync(ct);
+            return Results.Ok(new { refreshed = true, pluginCount = count });
+        })
+        .WithName("RefreshPluginCatalog")
+        .WithTags("Plugins");
     }
 }

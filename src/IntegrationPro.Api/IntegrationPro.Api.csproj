@@ -22,6 +22,12 @@
     <UiDir>$(MSBuildThisFileDirectory)..\IntegrationPro.Api.Ui</UiDir>
     <UiOut>$(MSBuildThisFileDirectory)wwwroot\ui</UiOut>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>True</Optimize>
+  </PropertyGroup>
   <ItemGroup>
     <UiSourceFiles Include="$(UiDir)\src\**\*;$(UiDir)\index.html;$(UiDir)\package.json;$(UiDir)\package-lock.json;$(UiDir)\tsconfig.json;$(UiDir)\vite.config.ts" />
   </ItemGroup>
